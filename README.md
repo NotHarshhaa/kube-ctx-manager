@@ -30,6 +30,13 @@ If you manage multiple Kubernetes clusters daily, you've probably:
 | **Namespace switcher** | `kns` fuzzy-picks namespaces within the current context |
 | **Context label** | Injects current context + namespace into your shell prompt (PS1/RPROMPT) |
 | **Audit log** | Every kubectl command against a prod context is appended to `~/.kube/audit.log` |
+| **Health monitoring** | `khealth` checks cluster connectivity and response times |
+| **Kubeconfig merging** | `kube-merge` combines multiple kubeconfig files safely |
+| **Backup & restore** | `kube-backup` creates and restores kubeconfig backups |
+| **Advanced search** | `ksearch` finds contexts by name, cluster, user, or pattern |
+| **Context bookmarks** | `kbookmark` saves favorite contexts with descriptions |
+| **Resource monitoring** | `kmonitor` shows cluster resource usage and health |
+| **Command analytics** | `kanalytics` tracks usage patterns and generates reports |
 
 ---
 
@@ -38,6 +45,13 @@ If you manage multiple Kubernetes clusters daily, you've probably:
 - `kubectl` ≥ 1.24
 - [`fzf`](https://github.com/junegunn/fzf) ≥ 0.35
 - Bash 4+ or Zsh 5+
+
+### Optional Dependencies
+
+- `yq` - For enhanced kubeconfig merging and validation
+- `jq` - For JSON processing in analytics and monitoring
+- `bats-core` - For running tests
+- `shellcheck` - For code linting
 
 ---
 
@@ -133,6 +147,77 @@ kube-audit-stats     # show audit statistics
 
 ---
 
+## Advanced Features
+
+### Health Monitoring
+
+```bash
+khealth                    # Check all contexts health
+khealth-quick             # Quick health check for current context
+khealth-watch             # Monitor context health continuously
+khealth-clean             # Clean health cache
+```
+
+### Kubeconfig Management
+
+```bash
+# Merge multiple configs
+kube-merge merged-config.yaml config1.yaml config2.yaml
+kube-merge-env            # Merge from KUBECONFIG env var
+
+# Backup and restore
+kube-backup               # Create backup
+kube-backup-list          # List backups
+kube-backup-restore name  # Restore from backup
+kube-backup-clean         # Clean old backups
+
+# Split configs by environment
+kube-split                # Split kubeconfig by patterns
+```
+
+### Advanced Search
+
+```bash
+ksearch pattern            # Search contexts by pattern
+ksearch-advanced          # Multi-criteria search
+ksearch-env prod          # Search by environment
+ksearch-provider eks      # Search by cloud provider
+ksearch-region us-east-1  # Search by region
+ksearch-interactive       # Interactive fzf search
+```
+
+### Context Bookmarks
+
+```bash
+kbookmark-add prod-main prod-eks-main "Production cluster" "prod,eks"
+kbookmark-list            # List all bookmarks
+kbookmark-go prod-main    # Switch to bookmarked context
+kbookmark-search pattern  # Search bookmarks
+kbookmark-interactive     # Interactive bookmark selection
+```
+
+### Resource Monitoring
+
+```bash
+kmonitor                  # Cluster overview
+kmonitor-resource pods    # Monitor specific resource
+kmonitor-watch pods       # Watch resources in real-time
+kmonitor-metrics          # Show resource usage
+kmonitor-health           # Cluster health score
+```
+
+### Command Analytics
+
+```bash
+kanalytics-stats          # Show usage statistics
+kanalytics-timeline       # Command timeline
+kanalytics-report         # Generate reports
+kanalytics-export         # Export analytics data
+kanalytics-suggest        # Suggest aliases based on usage
+```
+
+---
+
 ## Configuration
 
 Set these in your `.bashrc` / `.zshrc` **before** sourcing the plugin:
@@ -167,7 +252,14 @@ kube-ctx-manager/
 │   ├── safeguard.sh              # Prod confirmation wrapper
 │   ├── suggester.sh              # Alias usage tracking and suggestions
 │   ├── prompt.sh                 # PS1/RPROMPT injection
-│   └── audit.sh                  # Audit logging
+│   ├── audit.sh                  # Audit logging
+│   ├── health.sh                 # Health monitoring
+│   ├── merge.sh                  # Kubeconfig merging
+│   ├── backup.sh                 # Backup and restore
+│   ├── search.sh                 # Advanced search
+│   ├── bookmarks.sh              # Context bookmarks
+│   ├── monitor.sh                # Resource monitoring
+│   └── analytics.sh              # Command analytics
 ├── install.sh                    # Installer script
 ├── uninstall.sh                  # Clean removal
 ├── tests/

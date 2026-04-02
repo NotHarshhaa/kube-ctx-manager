@@ -21,6 +21,13 @@ source "$KCM_DIR/lib/safeguard.sh"
 source "$KCM_DIR/lib/suggester.sh"
 source "$KCM_DIR/lib/prompt.sh"
 source "$KCM_DIR/lib/audit.sh"
+source "$KCM_DIR/lib/health.sh"
+source "$KCM_DIR/lib/merge.sh"
+source "$KCM_DIR/lib/backup.sh"
+source "$KCM_DIR/lib/search.sh"
+source "$KCM_DIR/lib/bookmarks.sh"
+source "$KCM_DIR/lib/monitor.sh"
+source "$KCM_DIR/lib/analytics.sh"
 
 # Initialize suggester tracking
 _kcm_suggester_init
