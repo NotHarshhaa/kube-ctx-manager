@@ -16,6 +16,13 @@ export KCM_PROMPT_STYLE="${KCM_PROMPT_STYLE:-full}"
 export KCM_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 # Source library modules
+source "$KCM_DIR/lib/common.sh"
+source "$KCM_DIR/lib/config.sh"
+source "$KCM_DIR/lib/cache.sh"
+source "$KCM_DIR/lib/utils.sh"
+source "$KCM_DIR/lib/validation.sh"
+source "$KCM_DIR/lib/ui.sh"
+source "$KCM_DIR/lib/debug.sh"
 source "$KCM_DIR/lib/context.sh"
 source "$KCM_DIR/lib/safeguard.sh"
 source "$KCM_DIR/lib/suggester.sh"

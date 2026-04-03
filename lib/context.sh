@@ -28,23 +28,36 @@ _kcm_list_namespaces() {
 # Switch context
 _kcm_switch_context() {
     local context="$1"
-    local prev_context="$(_kcm_get_current_context)"
+    local prev_context="$(_kcm_get_current_context_safe)"
+    
+    # Validate input
+    if ! _kcm_validate_context "$context" "true"; then
+        return 1
+    fi
+    
+    _kcm_debug_trace_in "$context"
     
     if [[ "$context" == "-" ]]; then
         if [[ -n "$KCM_PREV_CONTEXT" ]]; then
             context="$KCM_PREV_CONTEXT"
         else
-            echo "No previous context to switch to" >&2
+            _kcm_error "No previous context to switch to"
+            _kcm_debug_trace_out 1
             return 1
         fi
     fi
     
-    if kubectl config use-context "$context" >/dev/null 2>&1; then
+    # Perform context switch with timeout
+    local result
+    if result=$(_kcm_safe_execute "$KCM_TIMEOUT" "kubectl config use-context '$context'"); then
         export KCM_PREV_CONTEXT="$prev_context"
-        echo "Switched to context: $context"
+        _kcm_success "Switched to context: $context"
+        _kcm_debug_log "INFO" "Context switched: $prev_context -> $context"
+        _kcm_debug_trace_out 0
         return 0
     else
-        echo "Failed to switch to context: $context" >&2
+        _kcm_error "Failed to switch to context: $context"
+        _kcm_debug_trace_out 1
         return 1
     fi
 }
@@ -67,29 +80,52 @@ _kcm_switch_namespace() {
 kx() {
     local context="$1"
     
+    _kcm_debug_trace_in "$context"
+    
     if [[ -n "$context" ]]; then
         _kcm_switch_context "$context"
-        return $?
+        local exit_code=$?
+        _kcm_debug_trace_out $exit_code
+        return $exit_code
     fi
     
-    if ! command -v fzf >/dev/null 2>&1; then
-        echo "fzf is required for fuzzy context selection" >&2
+    if ! _kcm_command_exists fzf; then
+        _kcm_error "fzf is required for fuzzy context selection"
+        _kcm_debug_trace_out 1
         return 1
     fi
     
-    local current_context="$(_kcm_get_current_context)"
-    local selected_context
+    local current_context
+    current_context=$(_kcm_get_current_context_safe)
+    local contexts
+    contexts=$(_kcm_cached_kubectl "config get-contexts -o name")
     
-    selected_context=$(_kcm_list_contexts | fzf \
-        --height=40% \
-        --layout=reverse \
+    if [[ -z "$contexts" ]]; then
+        _kcm_warning "No contexts found"
+        _kcm_debug_trace_out 1
+        return 1
+    fi
+    
+    _kcm_info "Selecting context with fzf..."
+    
+    local selected_context
+    selected_context=$(echo "$contexts" | fzf \
+        --height="$KCM_FZF_HEIGHT" \
+        --layout="$KCM_FZF_LAYOUT" \
         --border \
         --prompt="Select context> " \
         --header="Current: $current_context" \
-        --preview="kubectl config view --minify --context={} --output=json | jq -r '.contexts[0].context | \"Cluster: \\(.cluster)\\nUser: \\(.user)\"' 2>/dev/null || echo 'No details available'")
+        --preview="kubectl config view --minify --context={} --output=json 2>/dev/null | jq -r '.contexts[0].context | \"Cluster: \\(.cluster)\\nUser: \\(.user)\"' 2>/dev/null || echo 'No details available'")
     
     if [[ -n "$selected_context" ]]; then
         _kcm_switch_context "$selected_context"
+        local exit_code=$?
+        _kcm_debug_trace_out $exit_code
+        return $exit_code
+    else
+        _kcm_info "No context selected"
+        _kcm_debug_trace_out 0
+        return 0
     fi
 }
 
