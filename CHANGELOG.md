@@ -5,10 +5,67 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - Unreleased
 
 ### Added
-- Initial release of kube-ctx-manager
+- **Context History & Favorites**
+  - Track recent context switches with `khist`
+  - Save favorite contexts with `kfav-add` and quick-switch with `kfav`
+  - Context statistics with `kstats`
+  - Configurable history and favorites limits
+
+- **Enhanced Safeguard**
+  - Dry-run mode with `k-dry-run` for safe testing
+  - Configurable destructive verbs via `KCM_DESTRUCTIVE_VERBS`
+  - Multiple confirmation modes: strict, simple, none
+  - Extended destructive verb list (includes exec, attach, patch)
+
+- **Quick Resource Actions**
+  - `kshell` - Quick pod shell access with fuzzy selection
+  - `klogs` - Pod log viewing with follow mode
+  - `kpf` - Port-forwarding helper
+  - `kdesc` - Quick resource describe
+  - `kget` - Quick resource listing
+  - `kdel` - Safe resource deletion with confirmation
+  - `kscale` - Deployment scaling
+  - `krestart` - Deployment restart
+  - `kevents` - Event viewer
+  - `ktop` - Resource usage monitoring
+  - `kconfig` - Kubeconfig viewer
+
+- **Context Groups**
+  - Organize contexts by environment, team, or region
+  - `kgroup-add` / `kgroup-remove` for group management
+  - `kgroup-list` to view groups and contexts
+  - `kgroup` for fuzzy selection within groups
+  - `kgroup-auto` for automatic grouping by pattern
+
+- **Command Templates**
+  - Reusable command templates with variable substitution
+  - 18+ built-in templates for common operations
+  - `ktemplate` for interactive template execution
+  - Custom template creation with `ktemplate-add`
+
+- **Enhanced FZF Previews**
+  - Context preview shows cluster, user, namespace, prod status, favorite status
+  - Cluster connectivity check in context preview
+  - Namespace preview shows resource counts and labels
+  - Improved preview window layout
+
+### Changed
+- Enhanced context switcher with better preview information
+- Enhanced namespace switcher with resource counts
+- Improved fzf integration with better headers and prompts
+- Updated configuration with new environment variables
+
+### Fixed
+- Better error handling in context switching
+- Improved history tracking integration
+
+## [1.0.0] - 2026-04-02
+
+### Added
+- Initial public release
 - Fuzzy context switching with `kx` command
 - Fuzzy namespace switching with `kns` command
 - Production environment safeguards with confirmation prompts
@@ -18,6 +75,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for both Bash and Zsh shells
 - Complete test suite with bats-core
 - Installation and uninstallation scripts
+- Health monitoring features
+- Kubeconfig merging and backup
+- Advanced search capabilities
+- Context bookmarks
+- Resource monitoring
+- Command analytics
+- Security features with data redaction
 
 ### Features
 - **Context Management**
@@ -61,15 +125,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audit trail for all production commands
 - Context confirmation requirements
 - Safe command wrapping without modifying kubectl binary
-
-## [1.0.0] - 2026-04-02
-
-### Added
-- Initial public release
-- Complete feature set as described above
-- Comprehensive documentation
-- Full test coverage
-- Installation scripts for easy setup
 
 ---
 

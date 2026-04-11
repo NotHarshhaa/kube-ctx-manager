@@ -144,94 +144,11 @@ If you mistype or press Ctrl+C, the command is blocked and nothing is sent to th
 kube-audit           # show recent audit entries
 kube-audit-search delete  # search audit log for specific patterns
 kube-audit-stats     # show audit statistics
-```
-
----
-
-## Advanced Features
-
-### Health Monitoring
-
-```bash
-khealth                    # Check all contexts health
-khealth-quick             # Quick health check for current context
-khealth-watch             # Monitor context health continuously
-khealth-clean             # Clean health cache
-```
-
-### Kubeconfig Management
-
-```bash
-# Merge multiple configs
-kube-merge merged-config.yaml config1.yaml config2.yaml
-kube-merge-env            # Merge from KUBECONFIG env var
-
-# Backup and restore
-kube-backup               # Create backup
-kube-backup-list          # List backups
-kube-backup-restore name  # Restore from backup
-kube-backup-clean         # Clean old backups
-
-# Split configs by environment
+```ackup
+ps
+ i
 kube-split                # Split kubeconfig by patterns
-```
-
-### Advanced Search
-
-```bash
-ksearch pattern            # Search contexts by pattern
-ksearch-advanced          # Multi-criteria search
-ksearch-env prod          # Search by environment
-ksearch-provider eks      # Search by cloud provider
-ksearch-region us-east-1  # Search by region
-ksearch-interactive       # Interactive fzf search
-```
-
-### Context Bookmarks
-
-```bash
-kbookmark-add prod-main prod-eks-main "Production cluster" "prod,eks"
-kbookmark-list            # List all bookmarks
-kbookmark-go prod-main    # Switch to bookmarked context
-kbookmark-search pattern  # Search bookmarks
-kbookmark-interactive     # Interactive bookmark selection
-```
-
-### Resource Monitoring
-
-```bash
-kmonitor                  # Cluster overview
-kmonitor-resource pods    # Monitor specific resource
-kmonitor-watch pods       # Watch resources in real-time
-kmonitor-metrics          # Show resource usage
-kmonitor-health           # Cluster health score
-```
-
-### Command Analytics
-
-```bash
-kanalytics-stats          # Show usage statistics
-kanalytics-timeline       # Command timeline
-kanalytics-report         # Generate reports
-kanalytics-export         # Export analytics data
-kanalytics-suggest        # Suggest aliases based on usage
-```
-
----
-
-## Configuration
-
-Set these in your `.bashrc` / `.zshrc` **before** sourcing the plugin:
-
-```bash
-# Contexts matching this regex are treated as prod (default: prod|production|live)
-export KCM_PROD_PATTERN="prod|production|live|prd"
-
-# Number of times a command must repeat before alias is suggested (default: 3)
-export KCM_SUGGEST_THRESHOLD=3
-
-# Audit log location (default: ~/.kube/audit.log)
-export KCM_AUDIT_LOG="$HOME/.kube/audit.log"
+`  imUDIT_LOG="$HOME/.kube/audit.log"
 
 # Show context in prompt — set to 0 to disable (default: 1)
 export KCM_PROMPT=1
@@ -253,6 +170,15 @@ export KCM_ENABLE_CACHE=1
 
 # Security: Enable/disable sensitive data redaction (default: 1)
 export KCM_REDACT_SENSITIVE_DATA=1
+
+# History & Favorites
+export KCM_HISTORY_MAX=20                    # Max history entries
+export KCM_FAVORITES_MAX=10                  # Max favorites
+
+# Safeguard
+export KCM_DESTRUCTIVE_VERBS="delete|drain|cordon|scale|rollout.*restart|rollout.*undo|rollout.*abort|apply.*delete|patch|exec|attach"
+export KCM_DRY_RUN_MODE=0                    # Enable dry-run by default
+export KCM_CONFIRMATION_MODE="strict"        # strict|simple|none
 ```
 
 ---
@@ -455,6 +381,84 @@ bats -t tests/
 ### Common Issues
 
 **Plugin not loading**
+- En├ure you've sourced the plugin in your shell config
+│   - Rehsstory.sh                # Cottext hiatory and favorires
+│   ├── quick.sh                  # Quick resource tctions
+│   ├── groups.sh                 # Context groups
+│   └── templates.sh              # Command temp ates
+├── instaylour terminal or run `source ~/.bashrc` / `source ~/.zshrc`
+
+**fzf not found**
+- Install fzf: `brew install fzf` or `git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install`
+
+**kubectl not found**
+- Install kubectl: `brew install kubectl` or follow the [official installation guide](https://kubernetes.io/docs/tasks/tools/)
+
+**Aliases not being suggested**
+- Check your usage threshold: `echo $KCM_SUGGEST_THRESHOLD`
+- Verify tracking file exists: `ls -la ~/.kube-usage`
+
+**Prod safeguard not working**
+- Check your prod pattern: `echo $KCM_PROD_PATTERN`
+- Verify current context matches pattern: `kubectl config current-context`
+
+### Debug Mode
+
+Enable debug output by setting:
+
+```bash
+export KCM_DEBUG=1
+```
+
+This will show additional information about plugin operations.
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## Credits
+
+Inspired by various kubectl context management tools, but focused on being a lightweight, non-intrusive shell plugin that works out of the box.
+
+---
+
+## Supt pests/
+```
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Addort for new functionality
+5. Run `shellcheck lib*.sh` and fix any issues
+6. Run bats tests/ and ensure all tests pass
+7. Submit a pull request
+
+---
+
+## Roadmap
+
+- [ ] Homebrew tap for one-command install
+- [ ] Fish shell support
+- [ ] Multi-kubeconfig merging helper (kube-merge`)
+- [ ] Team-shared alias sync via a dotfiles-compatible format
+- [ ] VS Code terminal integration (context badge in title bar)
+- [ ] Helm release context awareness
+- [ ] K9s integration
+- [ ] Context health checks and auto-failover
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Plugin not loading**
 - Ensure you've sourced the plugin in your shell config
 - Restart your terminal or run `source ~/.bashrc` / `source ~/.zshrc`
 
@@ -495,6 +499,92 @@ MIT License - see [LICENSE](LICENSE) file for details.
 Inspired by various kubectl context management tools, but focused on being a lightweight, non-intrusive shell plugin that works out of the box.
 
 ---
+
+## Support
+
+- 🐛 [Report bugs](https://github.com/NotHarshhaa/kube-ctx-manager/issues)
+- 💡 [Feature requests](https://github.com/NotHarshhaa/kube-ctx-manager/issues/new?template=feature_request.md)
+- 💬 [Discussions](https://github.com/NotHarshhaa/kube-ctx-manager/discussions)
+- 🐛 [Report bugs](https://github.com/NotHarshhaa/kube-ctx-manager/issues)
+- 💡 [Feature requests](https://github.com/NotHarshhaa/kube-ctx-manager/issues/new?template=feature_request.md)
+- 💬 [Discussions](https://github.com/NotHarshhaa/kube-ctx-manager/discussions)
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run `shellcheck lib/*.sh` and fix any issues
+6. Run `bats tests/` and ensure all tests pass
+7. Submit a pull request
+
+---
+
+## Roadmap
+
+- [ ] Homebrew tap for one-command install
+- [ ] Fish shell support
+- [ ] Multi-kubeconfig merging helper (`kube-merge`)
+- [ ] Team-shared alias sync via a dotfiles-compatible format
+- [ ] VS Code terminal integration (context badge in title bar)
+- [ ] Helm release context awareness
+- [ ] K9s integration
+- [ ] Context health checks and auto-failover
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Plugin not loading**
+- Ensure you've sourced the plugin in your shell config
+- Restart your terminal or run `source ~/.bashrc` / `source ~/.zshrc`
+
+**fzf not found**
+- Install fzf: `brew install fzf` or `git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install`
+
+**kubectl not found**
+- Install kubectl: `brew install kubectl` or follow the [official installation guide](https://kubernetes.io/docs/tasks/tools/)
+
+**Aliases not being suggested**
+- Check your usage threshold: `echo $KCM_SUGGEST_THRESHOLD`
+- Verify tracking file exists: `ls -la ~/.kube-usage`
+
+**Prod safeguard not working**
+- Check your prod pattern: `echo $KCM_PROD_PATTERN`
+- Verify current context matches pattern: `kubectl config current-context`
+
+### Debug Mode
+
+Enable debug output by setting:
+
+```bash
+export KCM_DEBUG=1
+```
+
+This will show additional information about plugin operations.
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## Credits
+
+Inspired by various kubectl context management tools, but focused on being a lightweight, non-intrusive shell plugin that works out of the box.
+
+---
+
+## Support
+
+- 🐛 [Report bugs](https://github.com/NotHarshhaa/kube-ctx-manager/issues)
+- 💡 [Feature requests](https://github.com/NotHarshhaa/kube-ctx-manager/issues/new?template=feature_request.md)
+- 💬 [Discussions](https://github.com/NotHarshhaa/kube-ctx-manager/discussions)
 
 ## Support
 
