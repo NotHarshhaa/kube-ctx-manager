@@ -92,13 +92,27 @@ _kcm_template_execute() {
     local context="${variables[context]:-$(_kcm_get_current_context)}"
     local namespace="${variables[namespace]:-$(_kcm_get_current_namespace)}"
     
-    # Substitute variables
-    cmd="${cmd//{context}/$context}"
-    cmd="${cmd//{namespace}/$namespace}"
+    # Set default values for common variables
+    variables[context]="$context"
+    variables[namespace]="$namespace"
     
-    for key in "${!variables[@]}"; do
-        cmd="${cmd//{$key}/${variables[$key]}}"
+    # Substitute variables - do longer names first to avoid partial matches
+    # Sort keys by length (longest first)
+    local sorted_keys=($(printf "%s\n" "${!variables[@]}" | awk '{print length, $0}' | sort -rn | cut -d' ' -f2-))
+    
+    for key in "${sorted_keys[@]}"; do
+        local value="${variables[$key]}"
+        # Escape special characters in value for sed
+        local escaped_value=$(printf '%s\n' "$value" | sed 's/[&/\]/\\&/g')
+        cmd=$(echo "$cmd" | sed "s/{{$key}}/$escaped_value/g")
     done
+    
+    _kcm_debug_log "DEBUG" "Template before substitution: $(_kcm_template_get "$template_name")"
+    _kcm_debug_log "DEBUG" "Variables: ${!variables[@]}"
+    for key in "${!variables[@]}"; do
+        _kcm_debug_log "DEBUG" "  $key = ${variables[$key]}"
+    done
+    _kcm_debug_log "DEBUG" "Template after substitution: $cmd"
     
     _kcm_info "Executing: $cmd"
     eval "$cmd"
@@ -182,14 +196,15 @@ ktemplate() {
         return 1
     fi
     
-    # Extract variables from template
+    # Extract variables from template (without modifying original)
     local variables=()
-    while [[ "$template_cmd" =~ \{([^}]+)\} ]]; do
+    local temp_cmd="$template_cmd"
+    while [[ "$temp_cmd" =~ \{([^}]+)\} ]]; do
         local var="${BASH_REMATCH[1]}"
         if [[ ! " ${variables[@]} " =~ " ${var} " ]]; then
             variables+=("$var")
         fi
-        template_cmd="${template_cmd/\{$var\}/}"
+        temp_cmd="${temp_cmd/\{$var\}/}"
     done
     
     # Prompt for variable values

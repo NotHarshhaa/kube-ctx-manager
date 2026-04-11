@@ -87,6 +87,11 @@ _kcm_validate_context() {
     local context="$1"
     local check_exists="${2:-true}"
     
+    # Allow special "-" for previous context
+    if [[ "$context" == "-" ]]; then
+        return 0
+    fi
+    
     # Validate format
     if ! _kcm_validate "$context" "context_name" "Context name"; then
         return 1

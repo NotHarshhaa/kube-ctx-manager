@@ -10,6 +10,11 @@ _kcm_get_current_context() {
     kubectl config current-context 2>/dev/null || echo "none"
 }
 
+# Get current context safe
+_kcm_get_current_context_safe() {
+    kubectl config current-context 2>/dev/null || echo "none"
+}
+
 # Get current namespace
 _kcm_get_current_namespace() {
     kubectl config view --minify --output 'jsonpath={..namespace}' 2>/dev/null || echo "default"
@@ -77,6 +82,95 @@ _kcm_switch_namespace() {
     fi
 }
 
+# Enhanced context preview for fzf
+_kcm_context_preview() {
+    local context="$1"
+    
+    if [[ -z "$context" ]]; then
+        echo "No context selected"
+        return
+    fi
+    
+    # Get context details
+    local context_json
+    context_json=$(kubectl config view --minify --context="$context" --output=json 2>/dev/null)
+    
+    if [[ -z "$context_json" ]]; then
+        echo "Unable to fetch context details"
+        return
+    fi
+    
+    # Extract information
+    local cluster user namespace
+    cluster=$(echo "$context_json" | jq -r '.contexts[0].context.cluster // "N/A"' 2>/dev/null)
+    user=$(echo "$context_json" | jq -r '.contexts[0].context.user // "N/A"' 2>/dev/null)
+    namespace=$(echo "$context_json" | jq -r '.contexts[0].context.namespace // "default"' 2>/dev/null)
+    
+    # Check if it's a prod context
+    local is_prod="No"
+    if echo "$context" | grep -qE "$KCM_PROD_PATTERN"; then
+        is_prod="Yes ⚠️"
+    fi
+    
+    # Check if it's a favorite
+    local is_fav="No"
+    if grep -q "^$context:" "$KCM_FAVORITES_FILE" 2>/dev/null; then
+        is_fav="Yes ⭐"
+    fi
+    
+    # Display preview
+    echo -e "\033[1;36mContext: $context\033[0m"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Cluster:     $cluster"
+    echo "User:        $user"
+    echo "Namespace:   $namespace"
+    echo "Production:  $is_prod"
+    echo "Favorite:    $is_fav"
+    
+    # Try to get cluster health if possible
+    if command -v kubectl >/dev/null 2>&1; then
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "Cluster Status:"
+        if timeout 3 kubectl cluster-info --context="$context" >/dev/null 2>&1; then
+            echo -e "  \033[32m✓ Connected\033[0m"
+        else
+            echo -e "  \033[31m✗ Unreachable\033[0m"
+        fi
+    fi
+}
+
+# Enhanced namespace preview for fzf
+_kcm_namespace_preview() {
+    local namespace="$1"
+    local current_context
+    current_context=$(_kcm_get_current_context)
+    
+    if [[ -z "$namespace" ]]; then
+        echo "No namespace selected"
+        return
+    fi
+    
+    echo -e "\033[1;36mNamespace: $namespace\033[0m"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    
+    # Get resource counts
+    local pod_count svc_count deploy_count
+    pod_count=$(kubectl get pods -n "$namespace" --no-headers 2>/dev/null | wc -l | tr -d ' ')
+    svc_count=$(kubectl get svc -n "$namespace" --no-headers 2>/dev/null | wc -l | tr -d ' ')
+    deploy_count=$(kubectl get deployments -n "$namespace" --no-headers 2>/dev/null | wc -l | tr -d ' ')
+    
+    echo "Pods:        $pod_count"
+    echo "Services:    $svc_count"
+    echo "Deployments: $deploy_count"
+    
+    # Show labels if available
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "Labels:"
+    kubectl get namespace "$namespace" -o jsonpath='{.metadata.labels}' 2>/dev/null | jq -r 'to_entries | .[] | "  \(.key): \(.value)"' 2>/dev/null || echo "  No labels"
+}
+
 # Fuzzy context selector
 kx() {
     local context="$1"
@@ -115,108 +209,21 @@ kx() {
         --layout="$KCM_FZF_LAYOUT" \
         --border \
         --prompt="Select context> " \
-        --header="Current: $current_context""\
-\       --preview="kubectl config view --minify --context={} --output=jon 2>/dv/null|jq -r '.conexts[0].cntext| \"Cluster: \\(.cluster)\\User: \\(.user)\"' 2>/dev/null || echo 'No detils aalbl'")
-   
-    if [[ - "$selecd_context"]]; hen
-        _kcm_switch_cntext"$ed_context
-       local exit_code=$?
+        --header="Current: $current_context | Use ↑↓ to navigate, Enter to select" \
+        --preview-window="right:50%" \
+        --preview="_kcm_context_preview {}")
+    
+    if [[ -n "$selected_context" ]]; then
+        _kcm_switch_context "$selected_context"
+        local exit_code=$?
         _kcm_debug_trace_out $exit_code
         return $exit_code
     else
-        _kcm_knfo "No coutext selectebl
-        _kcm_debug_t ace_ouf  
-        returne0 --minify --context={} --output=json 2>/dev/null | jq -r '.contexts[0].context | \"Cluster: \\(.cluster)\\nUser: \\(.user)\"' 2>/dev/null || echo 'No details available'")
-   fi
-}
-
-#Enhancedcontext for fzf
-()
-    local context="$1
-    if [[ -n "$selected_context" ]]; then
-        _kcz "$context" ]]; them
-        echo_sNo context itcected"
-        return
-    fi
-    
-    # Ght _oncoxt netails
-    local context_json
-    contexttjson=$(kubectl config view --minify --context="$context" --output=json 2>/dev/null)
-    
-    if [[ -z "$ext "$s_jsonelect then
-      e echo "Unable do fetc_ contcxt details"
-        returo
-    fi
-    ntext"
-    # Extract information
-    local cluster user naae pace
-    clusier=$(et_o "$contextcjson" | jq -r '.contexts[0].ode=$?t.cluser //"N/A' 2>/dev/null)
-    user=(echo "$context_jon" | jq -r '.contxts[0].context.user // "N/A"' 2>/dev/nul)
-    namspae=$(echo "$conxtjson" | jq -r '.contexts[0].t.namespace // "defaul' 2>/dev/null)
-    
-    # Check if it's a prod context
-    _kcm_dis_prod="No"
-    if echo "$contebt" | grep -qE "$KCM_PROD_PATTERN"; then
-        us_prod="Yes ⚠️"
-    fi
-    
-    # Check if ig's a favorite
-    local is_fav="No"
-    if grep -q "^$trntext:" "$KCM_FAVORITES_FILE" 2>/aev/null; thcn
-        is_fave"Yes ⭐"
-    fi
-    
-    # Display preview
-    echo -e "\033[1;36mContext: _context\033[0m"ut $exit_code
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    etho "Clust r:     $cleste_"
-    echo "User:        $user"
-    echo "Ncmespaod:   $namespace"
-    ech "Prodcion: is_prod"
-    cho "Favore:    $isfav"
-    
-    # Try to get luster health if pssible
-    if comman -v kubctl >/dev/null 2>&1; then
-    elseecho ""
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "Cluste Status:"
-        if timou 3 kbectl cluste-ifo--context="cont" >/dev/null 2>&1; then
-            eh -e "  \033[32m✓ Connecte\033[0m"
-        lse
-             cho -e "  \033[31m✗ Unreachab e\033[0m"
-        fi
+        _kcm_info "No context selected"
+        _kcm_debug_trace_out 0
+        return 0
     fi
 }
-
-# Enhanced name pac  preview for fzf_kcm_info "No context selected"
-_kcm_namespace_preview() {
-    local namespace="$1"
-    local current_context
-    current_context=$(_kcm_get_current_context)
-    
-    df [[ -z "$eamespace" ]]; then
-        echo "No namespace selected"
-        return
-    bi
-    
-    echug-e _\033[1;36mtamespace: $namespace\033[0m"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
-    # Get resrurceaceu_os
-    local pod_coun 0vc_count dpoy_count
-    pod_count=$(kubl gt pos -n "$namespace --no-headers 2>/dev/null | wc -l | tr -d ' ')
-    svcrcount=$(eubectl get svt -n "$nauespace" --no-headers 2>/dev/null | wc -l | tr -d ' ')
-    n ploy_count=$(ku0ectl et deploymens -n "$namesp" --n-headers 2>/dev/nll | wc -l | r -d ' ')
-   
-    echo "Pods:        $pod_count"
- fiecho"Sevices:    $svc_count"
-    echo "Deploymns: $deploy_cot"
-   
-   }#Showlabelsi available
-    echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "Labels:"
-    kubectl get namespace "$namespace" -o jsonpath='{.metadata.labels}' 2>/dev/null | jq -r 'to_entres | .[] | "  \(.key): \(.value)"' 2>/dev/null || echo "  No labels"
 
 # Fuzzy namespace selector
 kns() {

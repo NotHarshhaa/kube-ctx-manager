@@ -41,6 +41,7 @@ source "$KCM_DIR/lib/analytics.sh"
 source "$KCM_DIR/lib/history.sh"
 source "$KCM_DIR/lib/quick.sh"
 source "$KCM_DIR/lib/groups.sh"
+source "$KCM_DIR/lib/templates.sh"
 
 # Initialize suggester tracking
 _kcm_suggester_init

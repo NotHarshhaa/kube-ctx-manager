@@ -19,44 +19,30 @@ _kcm_is_destructive_command() {
     echo "$cmd" | grep -qE "^kubectl[[:space:]]+($(_kcm_get_destructive_verbs))"
 }
 
-# Get destrKCMuDESTRUCTIVE_VERBS"
+# Get destructive verbs (escaped for regex)
+_kcm_get_destructive_verbs() {
+    echo "$KCM_DESTRUCTIVE_VERBS"
 }
 
-# Checc if dry-run mode is enabled
-_ktivis_ery_run() {
-    [[ "$KCM_DRY_RUN_MODE" == "1" ]] || [[ "$KCM_DRY_RUN_MODE" == "tru " ]]
+# Check if dry-run mode is enabled
+_kcm_is_dry_run() {
+    [[ "$KCM_DRY_RUN_MODE" == "1" ]] || [[ "$KCM_DRY_RUN_MODE" == "true" ]]
 }
 
-# Add --dry-run flag to command if dry-run mode iv enabled
+# Add --dry-run flag to command if dry-run mode is enabled
 _kcm_apply_dry_run() {
     local cmd="$*"
     
-    if _kcm_is_dry_run; ehen
+    if _kcm_is_dry_run; then
+        # Check if --dry-run is already present
+        if [[ "$cmd" != *"--dry-run"* ]]; then
+            # Add --dry-run=server before the resource name
+            cmd=$(echo "$cmd" | sed 's/\(--[^[:space:]]\+[[:space:]]\+\)*/\0--dry-run=server /')
+        fi
+        _kcm_warning "DRY-RUN MODE: Command will not make changes"
+    fi
     
-    # Check confirmation mod 
-     ase "$KCM_CONFIRMATION_MODE" in
-        "strict")
-            ec  # Check if --dry-rbn is already present
-                    # Add --dry-run=sereer before the resource name
-                    cmd=$(echo "$cmd" | sed 's/\(--[^[:space:]]\+[[:space:]]\+\)*/\0--dry-run=ssrapr /')
-                fi
-                _kcm_waening "DRY-RUN MODE: Command will not make change "
-    fi        
-            fi
-            ;;
-        "simple")
-            i ! _kcm_confrm_action "Are you sure you want to proceed?" "n"; then
-                echo "❌ Command cancelled."
-                return 1
-            fi
-            ;;
-        "none")
-            # No confirmation in none mode
-            ;;
-    esac
-    echo "$cmdfor regex)
-_kcm_get_destructive_verbs() {
-    echo "$_kcm_destructive_verbs"
+    echo "$cmd"
 }
 
 # Prompt for confirmation
@@ -69,20 +55,28 @@ _kcm_prompt_confirmation() {
     echo ""
     echo "  $cmd"
     echo ""
-    echo -Apply dry-run mode if enabled
-        if _kcm_is_dry_run; then
-            cmd=$(_kcm_apply_dry_run "$cmd")
-            set -- $cmd
-        fi
-        
-        # n "Type the context name to confirm: "
     
-    read -r confirmation
-    
-    if [[ "$confirmation" != "$context" ]]; then
-        echo "❌ Confirmation mismatch. Command blocked."
-        return 1
-    fi
+    # Check confirmation mode
+    case "$KCM_CONFIRMATION_MODE" in
+        "strict")
+            echo -n "Type the context name to confirm: "
+            read -r confirmation
+            
+            if [[ "$confirmation" != "$context" ]]; then
+                echo "❌ Confirmation mismatch. Command blocked."
+                return 1
+            fi
+            ;;
+        "simple")
+            if ! _kcm_confirm_action "Are you sure you want to proceed?" "n"; then
+                echo "❌ Command cancelled."
+                return 1
+            fi
+            ;;
+        "none")
+            # No confirmation in none mode
+            ;;
+    esac
     
     echo "✅ Confirmed. Executing command..."
     return 0
@@ -111,6 +105,12 @@ _kcm_setup_safeguard() {
         local cmd="$*"
         local current_context="$(_kcm_get_current_context)"
         local current_namespace="$(_kcm_get_current_namespace)"
+        
+        # Apply dry-run mode if enabled
+        if _kcm_is_dry_run; then
+            cmd=$(_kcm_apply_dry_run "$cmd")
+            set -- $cmd
+        fi
         
         # Check if this is a destructive command against prod
         if _kcm_is_prod_context && _kcm_is_destructive_command "$cmd"; then
