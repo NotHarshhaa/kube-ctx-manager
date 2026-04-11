@@ -3,6 +3,9 @@
 # kube-ctx-manager.bash
 # Main entry point for Bash
 
+# Security: Set restrictive umask for secure file creation
+umask 077
+
 # Ensure we're not already loaded
 [[ -n "$KCM_LOADED" ]] && return
 export KCM_LOADED=1

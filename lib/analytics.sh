@@ -11,17 +11,25 @@ export KCM_ANALYTICS_REPORT="$KCM_ANALYTICS_DIR/reports"
 # Initialize analytics
 _kcm_init_analytics() {
     mkdir -p "$KCM_ANALYTICS_DIR"
+    chmod 700 "$KCM_ANALYTICS_DIR"
     mkdir -p "$KCM_ANALYTICS_REPORT"
+    chmod 700 "$KCM_ANALYTICS_REPORT"
     
-    # Create command history file if it doesn't exist
+    # Create command history file if it doesn't exist with secure permissions
     if [[ ! -f "$KCM_COMMAND_HISTORY" ]]; then
         echo "# kube-ctx-manager command history" > "$KCM_COMMAND_HISTORY"
         echo "# Format: timestamp:context:namespace:command:duration:exit_code" >> "$KCM_COMMAND_HISTORY"
+        chmod 600 "$KCM_COMMAND_HISTORY"
     fi
 }
 
 # Log command execution
 _kcm_log_command() {
+    # Check if analytics is enabled
+    if [[ "${KCM_ENABLE_ANALYTICS:-1}" != "1" ]]; then
+        return 0
+    fi
+    
     local context="$1"
     local namespace="$2"
     local command="$3"
@@ -30,7 +38,11 @@ _kcm_log_command() {
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
-    echo "${timestamp}:${context}:${namespace}:${command}:${duration}:${exit_code}" >> "$KCM_COMMAND_HISTORY"
+    # Redact sensitive data before logging
+    local redacted_command
+    redacted_command=$(_kcm_redact_sensitive_data "$command")
+    
+    echo "${timestamp}:${context}:${namespace}:${redacted_command}:${duration}:${exit_code}" >> "$KCM_COMMAND_HISTORY"
 }
 
 # Get command statistics

@@ -9,12 +9,14 @@ export KCM_BOOKMARKS_FILE="$HOME/.kube-bookmarks"
 _kcm_init_bookmarks() {
     if [[ ! -f "$KCM_BOOKMARKS_FILE" ]]; then
         mkdir -p "$(dirname "$KCM_BOOKMARKS_FILE")"
+        chmod 700 "$(dirname "$KCM_BOOKMARKS_FILE")"
         cat > "$KCM_BOOKMARKS_FILE" << EOF
 # kube-ctx-manager bookmarks
 # Format: <bookmark-name>:<context-name>:<description>:<tags>
 # Example: prod-main:prod-eks-main:Production main cluster:prod,eks,us-east-1
 
 EOF
+        chmod 600 "$KCM_BOOKMARKS_FILE"
     fi
 }
 

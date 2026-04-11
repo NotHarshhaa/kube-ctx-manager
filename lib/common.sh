@@ -13,6 +13,30 @@ export KCM_NC='\033[0m'
 _kcm_init_common() {
     export KCM_TMP_DIR="${KCM_TMP_DIR:-/tmp/kube-ctx-manager}"
     mkdir -p "$KCM_TMP_DIR"
+    chmod 700 "$KCM_TMP_DIR"
+}
+
+# Security: Redact sensitive data patterns
+_kcm_redact_sensitive_data() {
+    local input="$1"
+    
+    # Check if redaction is enabled
+    if [[ "${KCM_REDACT_SENSITIVE_DATA:-1}" != "1" ]]; then
+        echo "$input"
+        return 0
+    fi
+    
+    # Redact secret values (common patterns)
+    input=$(echo "$input" | sed -E 's/(-o|--output[[:space:]]+(yaml|json))/-o redacted/g')
+    input=$(echo "$input" | sed -E 's/(secret|configmap|token|password)[[:space:]]+[^[:space:]]+/\1 REDACTED/gi')
+    input=$(echo "$input" | sed -E 's/--from-literal[[:space:]]+[^[:space:]]+=[^[:space:]]+/--from-literal REDACTED/g')
+    input=$(echo "$input" | sed -E 's/--token[[:space:]]+[[:space:]]+[[:graph:]]+/--token REDACTED/g')
+    input=$(echo "$input" | sed -E 's/-A|--all-namespaces/-A/g')
+    
+    # Redact potential credentials in base64 or similar
+    input=$(echo "$input" | sed -E 's/[A-Za-z0-9+/]{40,}=[=]{0,2}/REDACTED/g')
+    
+    echo "$input"
 }
 
 # Logging

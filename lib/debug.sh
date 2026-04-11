@@ -20,8 +20,9 @@ declare -A KCM_DEBUG_LEVELS=(
 
 # Initialize debug system
 _kcm_init_debug() {
-    # Create debug log directory
+    # Create debug log directory with secure permissions
     mkdir -p "$(dirname "$KCM_DEBUG_LOG")"
+    chmod 700 "$(dirname "$KCM_DEBUG_LOG")"
     
     # Set debug level from environment
     if [[ -n "${KCM_DEBUG+x}" ]]; then
@@ -31,12 +32,13 @@ _kcm_init_debug() {
         fi
     fi
     
-    # Initialize debug log
+    # Initialize debug log with secure permissions
     echo "# kube-ctx-manager debug log" > "$KCM_DEBUG_LOG"
     echo "# Started: $(date)" >> "$KCM_DEBUG_LOG"
     echo "# Debug level: $KCM_DEBUG_LEVEL" >> "$KCM_DEBUG_LOG"
     echo "# Trace enabled: $KCM_DEBUG_TRACE" >> "$KCM_DEBUG_LOG"
     echo "" >> "$KCM_DEBUG_LOG"
+    chmod 600 "$KCM_DEBUG_LOG"
 }
 
 # Enhanced debug logging
@@ -61,8 +63,12 @@ _kcm_debug_log() {
         return 0
     fi
     
+    # Redact sensitive data from debug messages
+    local redacted_message
+    redacted_message=$(_kcm_redact_sensitive_data "$message")
+    
     # Format log entry
-    local log_entry="[$timestamp] [$level] [$script_name:$line_number:$function_name] $message"
+    local log_entry="[$timestamp] [$level] [$script_name:$line_number:$function_name] $redacted_message"
     
     # Write to debug log
     echo "$log_entry" >> "$KCM_DEBUG_LOG"
@@ -92,7 +98,10 @@ _kcm_debug_trace_in() {
     if [[ "$KCM_DEBUG_TRACE" == "true" ]]; then
         local func_name="${FUNCNAME[1]}"
         local args="$*"
-        _kcm_debug_log "TRACE" "ENTER: $func_name($args)"
+        # Redact sensitive data from function arguments
+        local redacted_args
+        redacted_args=$(_kcm_redact_sensitive_data "$args")
+        _kcm_debug_log "TRACE" "ENTER: $func_name($redacted_args)"
     fi
 }
 

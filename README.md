@@ -37,6 +37,7 @@ If you manage multiple Kubernetes clusters daily, you've probably:
 | **Context bookmarks** | `kbookmark` saves favorite contexts with descriptions |
 | **Resource monitoring** | `kmonitor` shows cluster resource usage and health |
 | **Command analytics** | `kanalytics` tracks usage patterns and generates reports |
+| **Security features** | Sensitive data redaction, secure file permissions, configurable security options |
 
 ---
 
@@ -237,7 +238,128 @@ export KCM_PROMPT=1
 
 # Prompt style: 'minimal' shows just context name, 'full' shows context:namespace
 export KCM_PROMPT_STYLE="full"
+
+# Security: Enable/disable audit logging (default: 1)
+export KCM_ENABLE_AUDIT=1
+
+# Security: Enable/disable command analytics (default: 1)
+export KCM_ENABLE_ANALYTICS=1
+
+# Security: Enable/disable usage tracking (default: 1)
+export KCM_ENABLE_USAGE_TRACKING=1
+
+# Security: Enable/disable caching (default: 1)
+export KCM_ENABLE_CACHE=1
+
+# Security: Enable/disable sensitive data redaction (default: 1)
+export KCM_REDACT_SENSITIVE_DATA=1
 ```
+
+---
+
+## Security
+
+kube-ctx-manager is designed with security as a top priority, especially for cluster environments. All data files are protected with restrictive permissions and sensitive data is automatically redacted.
+
+### Security Features
+
+| Feature | Description |
+|---|---|
+| **Sensitive Data Redaction** | Automatically redacts secrets, tokens, passwords, and sensitive patterns from logs and cache |
+| **Secure File Permissions** | All data files created with `chmod 600` (owner-only), directories with `chmod 700` |
+| **Configurable Security** | Each security feature can be individually enabled/disabled via environment variables |
+| **No Data Leaks** | Commands with sensitive resources (secrets, configmaps) are not cached |
+| **Secure by Default** | All security features enabled by default, following defense-in-depth principles |
+
+### Sensitive Data Redaction
+
+The plugin automatically redacts the following patterns from all logs and cached data:
+- Secret/configmap/token/password names
+- `--from-literal` values
+- `--token` authentication values
+- Base64-encoded credentials (40+ characters)
+- Output format flags (`-o yaml/json`)
+
+Example redaction:
+```
+Before: kubectl get secret db-password -o yaml
+After:  kubectl get secret REDACTED -o redacted
+```
+
+### Security Configuration
+
+Set these in your `.bashrc` / `.zshrc` **before** sourcing the plugin:
+
+```bash
+# Enable/disable audit logging (default: 1)
+export KCM_ENABLE_AUDIT=1
+
+# Enable/disable command analytics (default: 1)
+export KCM_ENABLE_ANALYTICS=1
+
+# Enable/disable command usage tracking for alias suggestions (default: 1)
+export KCM_ENABLE_USAGE_TRACKING=1
+
+# Enable/disable caching (default: 1)
+export KCM_ENABLE_CACHE=1
+
+# Enable/disable sensitive data redaction (default: 1, not recommended to disable)
+export KCM_REDACT_SENSITIVE_DATA=1
+
+# Audit log retention period in days (default: 90)
+export KCM_AUDIT_RETENTION_DAYS=90
+
+# Analytics data retention period in days (default: 90)
+export KCM_ANALYTICS_RETENTION_DAYS=90
+```
+
+### Disabling Security Features
+
+If you need to disable specific security features (not recommended for production):
+
+```bash
+# Disable audit logging
+export KCM_ENABLE_AUDIT=0
+
+# Disable analytics
+export KCM_ENABLE_ANALYTICS=0
+
+# Disable usage tracking
+export KCM_ENABLE_USAGE_TRACKING=0
+
+# Disable caching
+export KCM_ENABLE_CACHE=0
+```
+
+### File Permissions
+
+All data files are created with secure permissions:
+
+| File/Directory | Permissions | Description |
+|---|---|---|
+| `~/.kube/audit.log` | 600 | Audit log file |
+| `~/.kube-analytics/` | 700 | Analytics directory |
+| `~/.kube-cache/` | 700 | Cache directory |
+| `~/.kube-usage` | 600 | Usage tracking file |
+| `~/.kube-debug.log` | 600 | Debug log file |
+| `~/.kube-bookmarks` | 600 | Bookmarks file |
+| `~/.kube-ctx-manager/` | 700 | Configuration directory |
+
+### Security Best Practices
+
+1. **Never disable data redaction** in production environments
+2. **Review audit logs regularly** for suspicious activity
+3. **Set appropriate retention periods** based on your compliance requirements
+4. **Restrict access** to `~/.kube/` directory on multi-user systems
+5. **Keep the plugin updated** to get security patches
+
+### Cluster Deployment
+
+When deploying in a cluster environment:
+- All security features are enabled by default
+- No sensitive data is logged or cached
+- Files are created with restrictive permissions (600/700)
+- The plugin runs entirely within the user's shell session (no background processes)
 
 ---
 

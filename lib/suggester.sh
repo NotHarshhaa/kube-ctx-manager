@@ -8,8 +8,14 @@ export KCM_ALIASES_FILE="$HOME/.kube-aliases"
 
 # Initialize suggester
 _kcm_suggester_init() {
-    # Create usage file if it doesn't exist
+    # Check if usage tracking is enabled
+    if [[ "${KCM_ENABLE_USAGE_TRACKING:-1}" != "1" ]]; then
+        return 0
+    fi
+    
+    # Create usage file if it doesn't exist with secure permissions
     touch "$KCM_USAGE_FILE"
+    chmod 600 "$KCM_USAGE_FILE"
     
     # Hook into command execution if supported
     if [[ -n "$BASH_VERSION" ]]; then
@@ -21,12 +27,20 @@ _kcm_suggester_init() {
 
 # Setup Bash hook for command tracking
 _kcm_setup_bash_hook() {
+    # Check if usage tracking is enabled
+    if [[ "${KCM_ENABLE_USAGE_TRACKING:-1}" != "1" ]]; then
+        return 0
+    fi
+    
     # Use DEBUG trap to track commands
     _kcm_track_command() {
         local cmd="$1"
         # Only track kubectl commands
         if [[ "$cmd" =~ ^kubectl[[:space:]] ]]; then
-            echo "$(date '+%s'):$cmd" >> "$KCM_USAGE_FILE"
+            # Redact sensitive data before tracking
+            local redacted_cmd
+            redacted_cmd=$(_kcm_redact_sensitive_data "$cmd")
+            echo "$(date '+%s'):$redacted_cmd" >> "$KCM_USAGE_FILE"
         fi
     }
     
@@ -36,12 +50,20 @@ _kcm_setup_bash_hook() {
 
 # Setup Zsh hook for command tracking
 _kcm_setup_zsh_hook() {
+    # Check if usage tracking is enabled
+    if [[ "${KCM_ENABLE_USAGE_TRACKING:-1}" != "1" ]]; then
+        return 0
+    fi
+    
     # Use preexec hook in Zsh
     _kcm_track_command() {
         local cmd="$1"
         # Only track kubectl commands
         if [[ "$cmd" =~ ^kubectl[[:space:]] ]]; then
-            echo "$(date '+%s'):$cmd" >> "$KCM_USAGE_FILE"
+            # Redact sensitive data before tracking
+            local redacted_cmd
+            redacted_cmd=$(_kcm_redact_sensitive_data "$cmd")
+            echo "$(date '+%s'):$redacted_cmd" >> "$KCM_USAGE_FILE"
         fi
     }
     

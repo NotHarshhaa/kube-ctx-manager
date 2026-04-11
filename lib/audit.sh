@@ -8,9 +8,11 @@ _kcm_init_audit_log() {
     local audit_dir
     audit_dir=$(dirname "$KCM_AUDIT_LOG")
     mkdir -p "$audit_dir"
+    chmod 700 "$audit_dir"
     
-    # Create audit log if it doesn't exist
+    # Create audit log if it doesn't exist with secure permissions
     touch "$KCM_AUDIT_LOG"
+    chmod 600 "$KCM_AUDIT_LOG"
     
     # Add header if file is empty
     if [[ ! -s "$KCM_AUDIT_LOG" ]]; then
@@ -20,8 +22,33 @@ _kcm_init_audit_log() {
     fi
 }
 
+# Log audit entry
+_kcm_audit_command() {
+    # Check if audit is enabled
+    if [[ "${KCM_ENABLE_AUDIT:-1}" != "1" ]]; then
+        return 0
+    fi
+    
+    local context="$1"
+    local namespace="$2"
+    local cmd="$3"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    # Redact sensitive data before logging
+    local redacted_cmd
+    redacted_cmd=$(_kcm_redact_sensitive_data "$cmd")
+    
+    echo "[$timestamp] context=$context namespace=$namespace command=$redacted_cmd" >> "$KCM_AUDIT_LOG"
+}
+
 # Enhanced audit function with more details
 _kcm_audit_command_detailed() {
+    # Check if audit is enabled
+    if [[ "${KCM_ENABLE_AUDIT:-1}" != "1" ]]; then
+        return 0
+    fi
+    
     local context="$1"
     local namespace="$2"
     local cmd="$3"
@@ -34,8 +61,12 @@ _kcm_audit_command_detailed() {
     user=$(whoami)
     host=$(hostname)
     
-    # Log with additional metadata
-    echo "[$timestamp] user=$user host=$host context=$context namespace=$namespace command=$cmd" >> "$KCM_AUDIT_LOG"
+    # Redact sensitive data before logging
+    local redacted_cmd
+    redacted_cmd=$(_kcm_redact_sensitive_data "$cmd")
+    
+    # Log with additional metadata (redacted)
+    echo "[$timestamp] user=$user host=$host context=$context namespace=$namespace command=$redacted_cmd" >> "$KCM_AUDIT_LOG"
 }
 
 # Show recent audit entries

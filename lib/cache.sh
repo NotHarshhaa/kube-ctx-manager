@@ -17,7 +17,13 @@ KCM_CACHE_STATS[size]=0
 
 # Initialize cache system
 _kcm_init_cache() {
+    # Check if cache is enabled
+    if [[ "${KCM_ENABLE_CACHE:-1}" != "1" ]]; then
+        return 0
+    fi
+    
     mkdir -p "$KCM_CACHE_DIR"
+    chmod 700 "$KCM_CACHE_DIR"
     
     # Load cache statistics
     local stats_file="$KCM_CACHE_DIR/stats"
@@ -78,6 +84,11 @@ _kcm_cache_is_valid() {
 
 # Get data from cache
 _kcm_cache_get() {
+    # Check if cache is enabled
+    if [[ "${KCM_ENABLE_CACHE:-1}" != "1" ]]; then
+        return 1
+    fi
+    
     local key="$1"
     local ttl="${2:-$KCM_CACHE_DEFAULT_TTL}"
     
@@ -100,6 +111,11 @@ _kcm_cache_get() {
 
 # Set data in cache
 _kcm_cache_set() {
+    # Check if cache is enabled
+    if [[ "${KCM_ENABLE_CACHE:-1}" != "1" ]]; then
+        return 0
+    fi
+    
     local key="$1"
     local data="$2"
     local ttl="${3:-$KCM_CACHE_DEFAULT_TTL}"
@@ -110,6 +126,10 @@ _kcm_cache_set() {
     # Check cache size limit
     _kcm_cache_check_size
     
+    # Redact sensitive data before caching
+    local redacted_data
+    redacted_data=$(_kcm_redact_sensitive_data "$data")
+    
     # Write data with metadata
     local temp_file
     temp_file=$(_kcm_mktemp cache_set)
@@ -118,10 +138,11 @@ _kcm_cache_set() {
         echo "# TTL: $ttl seconds"
         echo "# Size: $(echo "$data" | wc -c) bytes"
         echo "---"
-        echo "$data"
+        echo "$redacted_data"
     } > "$temp_file"
     
     mv "$temp_file" "$cache_file"
+    chmod 600 "$cache_file"
     
     _kcm_log "DEBUG" "Cache set: $key ($(echo "$data" | wc -c) bytes)"
 }
@@ -283,6 +304,12 @@ _kcm_parallel_execute() {
 
 # Cached kubectl execution
 _kcm_cached_kubectl() {
+    # Check if cache is enabled
+    if [[ "${KCM_ENABLE_CACHE:-1}" != "1" ]]; then
+        kubectl "$@"
+        return $?
+    fi
+    
     local cache_key
     cache_key=$(_kcm_cache_key "kubectl" "$*")
     local ttl="${KCM_CACHE_DEFAULT_TTL}"
@@ -297,6 +324,11 @@ _kcm_cached_kubectl() {
     # Execute command and cache result
     local result
     if result=$(kubectl "$@" 2>&1); then
+        # Don't cache commands that likely contain sensitive data
+        if [[ "$*" =~ (secret|configmap|token|password) ]]; then
+            echo "$result"
+            return 0
+        fi
         _kcm_cache_set "$cache_key" "$result" "$ttl"
         echo "$result"
         return 0

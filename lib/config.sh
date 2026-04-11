@@ -27,6 +27,14 @@ declare -A KCM_DEFAULTS=(
     ["KCM_FZF_LAYOUT"]="reverse"
     ["KCM_TIMEOUT"]="30"
     ["KCM_PARALLEL_JOBS"]="4"
+    # Security configuration options
+    ["KCM_ENABLE_AUDIT"]="1"
+    ["KCM_ENABLE_ANALYTICS"]="1"
+    ["KCM_ENABLE_CACHE"]="1"
+    ["KCM_ENABLE_USAGE_TRACKING"]="1"
+    ["KCM_REDACT_SENSITIVE_DATA"]="1"
+    ["KCM_AUDIT_RETENTION_DAYS"]="90"
+    ["KCM_ANALYTICS_RETENTION_DAYS"]="90"
 )
 
 # Current configuration (will be populated from defaults and user config)
@@ -34,8 +42,9 @@ declare -A KCM_CONFIG
 
 # Initialize configuration system
 _kcm_init_config() {
-    # Create config directory
+    # Create config directory with secure permissions
     mkdir -p "$KCM_CONFIG_DIR"
+    chmod 700 "$KCM_CONFIG_DIR"
     
     # Load defaults
     for key in "${!KCM_DEFAULTS[@]}"; do
