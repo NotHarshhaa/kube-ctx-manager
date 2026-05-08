@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-01-08
+
+### Added
+- **Context Export/Import**
+  - `kexport context <name> [file]` - Export a single context to a file
+  - `kexport contexts <pattern> [file]` - Export contexts matching pattern
+  - `kexport list` - List all exported contexts
+  - `kimport <file> [--merge]` - Import context(s) from file with merge option
+
+- **Namespace Favorites**
+  - `kns-fav-add <namespace> [description]` - Add namespace to favorites
+  - `kns-fav-remove <namespace>` - Remove namespace from favorites
+  - `kns-fav-list` - List favorite namespaces for current context
+  - `kns-fav [namespace]` - Switch to favorite namespace with fuzzy selection
+
+- **Context Comparison**
+  - `kdiff [context1] [context2]` - Compare two contexts or current vs another
+  - `kinfo [context]` - Show detailed context information including cluster, user, namespace, server
+  - Displays connectivity status and favorite status
+
+- **Tool Integrations**
+  - `kk9s [context] [namespace]` - Launch K9s with specified context and namespace
+  - `khelm <context> [args]` - Run Helm commands in specific context
+  - `khelm-list [context] [ns]` - List Helm releases in context/namespace
+  - `kstern <context> <pattern>` - Tail logs with Stern in specific context
+  - `ktitle [context] [namespace]` - Set VS Code terminal title with context info
+
+- **Resource Management**
+  - `kquota [namespace]` - Show resource quotas for namespace
+  - `klimits [namespace]` - Show limit ranges for namespace
+  - `kpod-res [namespace]` - Show pod resource requests/limits
+  - `knode-res` - Show node resource summary with top nodes
+  - `kpvc [namespace]` - Show PVC usage and capacity
+  - `kcleanup [namespace] [dry]` - Clean up unused resources (jobs, failed pods)
+  - `kres-events [ns] [type] [name]` - Show resource events with filtering
+  - `kimages [namespace]` - Analyze container images in namespace
+  - `ksec-analysis [namespace]` - Security context analysis (root pods, privileged containers, hostPath volumes)
+
+### Changed
+- Updated repo structure documentation to include new library modules
+- Updated configuration options to include `KCM_NS_FAVORITES_MAX`
+- Fixed README corruption and duplicate sections
+- Updated roadmap to mark completed features (kube-merge, VS Code integration, Helm, K9s)
+
+### Security
+- All new data files created with secure permissions (600/700)
+- Export files stored in `~/.kube-exports` with restricted access
+- Namespace favorites stored in `~/.kube-namespace-favorites` with secure permissions
+
 ## [2.0.0] - Unreleased
 
 ### Added

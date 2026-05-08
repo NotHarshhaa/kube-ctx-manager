@@ -38,9 +38,33 @@ source "$KCM_DIR/lib/search.sh"
 source "$KCM_DIR/lib/bookmarks.sh"
 source "$KCM_DIR/lib/monitor.sh"
 source "$KCM_DIR/lib/analytics.sh"
+source "$KCM_DIR/lib/history.sh"
+source "$KCM_DIR/lib/quick.sh"
+source "$KCM_DIR/lib/groups.sh"
+source "$KCM_DIR/lib/templates.sh"
+source "$KCM_DIR/lib/export.sh"
+source "$KCM_DIR/lib/nfav.sh"
+source "$KCM_DIR/lib/diff.sh"
+source "$KCM_DIR/lib/integration.sh"
+source "$KCM_DIR/lib/resource.sh"
 
 # Initialize suggester tracking
 _kcm_suggester_init
+
+# Initialize history system
+_kcm_history_init
+
+# Initialize groups system
+_kcm_groups_init
+
+# Initialize templates system
+_kcm_templates_init
+
+# Initialize namespace favorites system
+_kcm_nsfav_init
+
+# Initialize export system
+_kcm_export_init
 
 # Setup prompt if enabled
 if [[ "$KCM_PROMPT" == "1" ]]; then

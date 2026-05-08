@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # install.sh - Installation script for kube-ctx-manager
+# Version: 2.1.0
 
 set -e
 
